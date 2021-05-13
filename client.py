@@ -17,8 +17,6 @@ class PaintWidget(StencilView):
         if line:
             line.points += [touch.x, touch.y]
 
-        print(self.canvas)
-
 
 class Screen(Widget):
     def __init__(self, **kwargs):
