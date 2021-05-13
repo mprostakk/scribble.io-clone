@@ -1,0 +1,61 @@
+#:kivy 2.0.0
+
+<Screen>:
+    FloatLayout:
+        id: main_float
+        pos: 0, 0
+        size: root.width, root.height
+
+        BoxLayout:
+            orientation: 'vertical'
+
+            Label:
+                id: word
+                text: 'Word to guess'
+                size: 0, 50
+                size_hint: 1., None
+            BoxLayout:
+                orientation: 'horizontal'
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint: .15, 1.
+                    Label:
+                        text: 'Person1: 200'
+                    Label:
+                        text: 'Person2: 220'
+                    Label:
+                        text: 'Person3: 150'
+                PaintWidget:
+                    id: paint_widget
+                    size: 500, 500
+                    size_hint: None, None
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint: .2, 1.
+
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: True
+                        GridLayout:
+                            id: chat_grid
+                            cols: 1
+                            row_default_height: '20dp'
+                            row_force_default: True
+                            spacing: 0, 0
+                            padding: 0, 0
+
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        size: 0, 50
+                        size_hint: 1., None
+
+                        TextInput:
+                            id: text_input
+                            size_hint: .8, 1
+
+                        Button:
+                            id: send
+                            text: 'Send'
+                            size: 70, 0
+                            size_hint: None, 1.
+                            on_press: root.send_message()
