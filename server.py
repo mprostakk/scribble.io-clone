@@ -20,9 +20,6 @@
 # - send to drawer word np. ala ma kota
 # SEND_END_GAME_STATUS [np. WON, LOST, 50pnkt]
 
-#UPDATE_PLAYERS
-# Action: UPDATE_PLAYERS \r\n
-# Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}"
 
 import socket
 import json
