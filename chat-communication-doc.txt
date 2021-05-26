@@ -1,0 +1,15 @@
+# SEND_CHAT - wysyła całą dotychczasową historię czatu
+# Action: SEND_CHAT         \r\n
+# Headers-Length: 1         \r\n
+# Content-Length: len(data) \r\n
+# Data: username, time_stamp, message \r\n
+
+# SEND_MESSAGE - przyjmuje od usera wiadomość i wysyła ją do wszystkich, sendallem
+# Action: SEND_MESSAGE                \r\n
+# Headers-Length: 2                   \r\n
+# User: username                      \r\n
+# Data: username, time_stamp, message \r\n
+
+#UPDATE_PLAYERS
+# Action: UPDATE_PLAYERS \r\n
+# Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}"

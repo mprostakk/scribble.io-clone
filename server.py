@@ -24,22 +24,10 @@
 # Action: UPDATE_PLAYERS \r\n
 # Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}"
 
-
-# SEND_MESSAGE
-# Action: SEND_CHAT         \r\n
-# Headers-Length: 2         \r\n
-# Content-Length: len(data) \r\n
-# User: username            \r\n
-# Data: time_stamp, message \r\n
-
-# GET_CHAT
-# Action: GET_CHAT \r\n
-# User: 
-
 import socket
 import json
 
-host = "127.0.0.1"
+host = "103.0.0.2"
 port = 1780
 
 class ServerBase:
@@ -55,7 +43,10 @@ class ServerBase:
 
     def receive(self):
         """
-        Action: DRAW \r\nUser: maciej \r\nData: 1.0, 2.2 \r\n\r\n\r\n
+        Action: DRAW\r\n
+        Headers-Length: 2\r\n
+        Content-Length: 43\r\n
+        Data: 1.0, 2.2\r\n\r\n
         """
         data = b''
         while b'\r\n\r\n' not in data:
@@ -63,24 +54,17 @@ class ServerBase:
         data = data.decode('utf-8')    
 
         rcv_action = data.split('\r\n')[0]
-        rcv_user = data.split('\r\n')[1]
-        rcv_data = data.split('\r\n')[2]
+        rcv_headers_length = data.split('\r\n')[1]
+        rcv_content_length = data.split('\r\n')[2]
+        rcv_data = data.split('\r\n')[3]
         
-        return rcv_action, rcv_user, rcv_data
+        return rcv_action, rcv_content_length, rcv_data
 
     def parse_request(self):
-        """
-        {
-            'Action': 'DRAW',
-            'User': 'maciej',
-            'Data': '1.0, '2.2'
-        }
-        """
-
-        action, user, data = self.receive(self)
+        action, content_length, data = self.receive(self)
         request_obj = { 
             "action": action,
-            "user": user,
+            "content_length": content_length,
             "data": data,    
         }
         return json.dumps(request_obj)
@@ -93,7 +77,6 @@ class ServerBase:
 class Server(ServerBase):
     def __init__(self) -> None:
         super().__init__()
-        self.base = ServerBase()
 
         self.dispatcher = [
             ('DRAW', self.send_draw),
@@ -102,8 +85,9 @@ class Server(ServerBase):
         ]
 
     def receive_request(self):
-        data = self.parse_request()
-        print(data)
+        # data = self.base.parse_request()
+        # print(data)
+        pass
 
     def send_draw(self, request):
         pass
@@ -112,12 +96,13 @@ class Server(ServerBase):
         pass
 
     def send_chat(self):
-        self.base.s.sendall("tablica obiektow typu ChatMessage".encode('utf-8'))
+        # self.base.s.sendall("tablica obiektow typu ChatMessage".encode('utf-8'))
         return
 
 
 def main():
-    server = Server()
+    server_base = ServerBase()
+    server = Server(server_base)
     server.run()
     server.receive_request()
 
