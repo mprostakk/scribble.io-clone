@@ -1,107 +1,107 @@
 
-# --- METHODS FROM CLIENT
-
-# LOGIN (nickname) [wpuszczamy po wpisaniu na poczatku / czy nick zajety]
-# START [każdy może kliknac start]
-# DRAW [tylko ten co moze rysowac]
-# SEND_CHAT [wszyscy]
-# [jesli rysuje-mam zabklowoany wysylanie w chat]
-
-
-# --- METHODS FROM SERVER
-
-# TURN (id)
-# SEND_DRAW
-# UPDATE_CHAT
-# UPDATE_PLAYERS [wysylamy tez punkty] [sortujemy po ilosci punktow]
-# UPDATE_REMAINING_TIME [np. 00:45]
-# START_GAME
-# - send to guessing string word slots np. ___ ___ __
-# - send to drawer word np. ala ma kota
-# SEND_END_GAME_STATUS [np. WON, LOST, 50pnkt]
-
-
+from functools import update_wrapper
 import socket
 import json
+import logging
 
-host = "103.0.0.2"
-port = 1780
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+
+host = 'localhost'
+port = 1781
+
+
+class Request:
+    def __init__(self):
+        self.headers = dict()
+    
+    def parse_request(self, data: str) -> None:
+        stripped_data = data[:-2].split('\r\n')
+        for header in stripped_data:
+            if header == '':
+                continue
+
+            name, data = header.split(': ')
+            self.headers[name] = data
 
 class ServerBase:
 
     def __init__(self) -> None:
         self.buffer = []
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect((host, port))
-        self.client, self.addr = self.s.accept() 
+        logging.info('Creating socket')
+        self.number_of_clients = 2  
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind((host, port))
+        self.socket.listen(self.number_of_clients)
+        logging.info(f'Listening to {self.number_of_clients} clients')
 
     def send(self):
         pass
 
-    def receive(self):
-        """
-        Action: DRAW\r\n
-        Headers-Length: 2\r\n
-        Content-Length: 43\r\n
-        Data: 1.0, 2.2\r\n\r\n
-        """
+    def receive(self, client) -> str:
         data = b''
         while b'\r\n\r\n' not in data:
-            data += self.s.recv(120)
-        data = data.decode('utf-8')    
+            data += client.recv(120)
+        data = data.decode('utf-8')
+        return data
 
-        rcv_action = data.split('\r\n')[0]
-        rcv_headers_length = data.split('\r\n')[1]
-        rcv_content_length = data.split('\r\n')[2]
-        rcv_data = data.split('\r\n')[3]
-        
-        return rcv_action, rcv_content_length, rcv_data
-
-    def parse_request(self):
-        action, content_length, data = self.receive(self)
-        request_obj = { 
-            "action": action,
-            "content_length": content_length,
-            "data": data,    
-        }
-        return json.dumps(request_obj)
-
-    def run(self):
-        print('Server running')
-        pass
-
+    def receive_request(self, client) -> Request:
+        rcv_data = self.receive(client)
+        request = Request()
+        request.parse_request(rcv_data)
+        return request
 
 class Server(ServerBase):
     def __init__(self) -> None:
         super().__init__()
-
+        self.clients = list()
         self.dispatcher = [
             ('DRAW', self.send_draw),
-            ('UPDATE_CHAT', self.update_chat),
-            ('SEND_CHAT', self.send_chat)
+            ('SEND_MESSAGE', self.send_message)
         ]
+        
+    def run(self):
+        while True:
+            client, addr = self.socket.accept()
 
-    def receive_request(self):
-        # data = self.base.parse_request()
-        # print(data)
-        pass
+            request = self.receive_request(client)
+            if self.check_request(request):
+                self.clients.append(client)
 
+            logging.info(request.headers)
+
+    
+    def check_request(self, request):
+        print(request.headers.get('Action'))
+        if 'HELLO' in request.headers.get('Action'):
+            return True
+        else:
+            return False
+            
+    
+    def update_chat(self, client, request):
+        print(request.headers.get('data'))
+        client.send()
+    
     def send_draw(self, request):
         pass
 
-    def update_chat(self):
-        pass
-
-    def send_chat(self):
-        # self.base.s.sendall("tablica obiektow typu ChatMessage".encode('utf-8'))
+    def send_message(self, request):
         return
 
 
 def main():
-    server_base = ServerBase()
-    server = Server(server_base)
+    server = Server()
     server.run()
-    server.receive_request()
+    
+    # for client in server.clients:
+    #     print(client)
 
 
 if __name__ == '__main__':
