@@ -31,7 +31,7 @@ class PaintWidget(StencilView):
 
 class Screen(Widget):
     def __init__(self, **kwargs):
-        event = Clock.schedule_interval(self.test_callback, 1 / 30.)    
+        event = Clock.schedule_interval(self.test_callback, 1 / 30.)
         super().__init__(**kwargs)
 
     def send_message(self):
@@ -47,7 +47,7 @@ class Screen(Widget):
         # img = paint.export_as_image()
         # print(img)
         # paint.export_to_png('test.png')
-    
+
     def test_callback(self, dt):
         if q.empty() is False:
             data = q.get()
@@ -59,6 +59,7 @@ class Screen(Widget):
                     text=data
                 )
             )
+
 
 class TestApp(App):
     def build(self):
@@ -104,6 +105,6 @@ if __name__ == '__main__':
     sender_thread.daemon = True
     sender_thread.start()
 
-    # event = Clock.schedule_interval(my_callback, 1 / 30.)    
+    # event = Clock.schedule_interval(my_callback, 1 / 30.)
 
     TestApp().run()

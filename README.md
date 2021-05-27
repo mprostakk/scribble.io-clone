@@ -2,4 +2,4 @@
 
 Built with Kivy 2.0.0
 
-Server built python sockets
+Server built with python sockets
