@@ -17,6 +17,7 @@ def worker():
 
 
 worker_thread = Thread(target=worker)
+worker_thread.daemon = True
 worker_thread.start()
 
 

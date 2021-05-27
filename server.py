@@ -117,9 +117,11 @@ class Server(ServerBase):
         threads = list()
         
         game_thread = Thread(target=game_worker)
+        game_thread.daemon = True
         game_thread.start()
 
         sender_thread = Thread(target=sender_worker)
+        sender_thread.daemon = True
         sender_thread.start()
 
         threads.append(game_thread)
