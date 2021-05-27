@@ -3,6 +3,9 @@ from functools import update_wrapper
 import socket
 import json
 import logging
+from threading import Thread
+from queue import Queue
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +18,11 @@ logging.basicConfig(
 
 host = 'localhost'
 port = 1781
+queueClient = Queue()
+queueSender = Queue()
 
+
+clients = list()
 
 class Request:
     def __init__(self):
@@ -29,6 +36,46 @@ class Request:
 
             name, data = header.split(': ')
             self.headers[name] = data
+
+
+def read(client, sepp='\r\n'):
+    buffer = client.recv(1).decode('utf-8')
+    
+    while not (sepp in buffer):
+        data = client.recv(1).decode('utf-8')
+        buffer += data
+    
+    return buffer[:len(buffer)-2]
+
+
+def worker(client):
+    while True:
+        tmp = read(client, sepp='\r\n\r\n')
+        logging.info(f'Worker: got {tmp}')
+        logging.info('Worker: Pushing to queueClient')
+        queueClient.put((client, tmp))
+
+
+def sender_worker():
+    while True:
+        client, message = queueSender.get()
+        logging.info(f'Will send {message} to client')
+        client.sendall(message.encode('utf-8'))
+        queueSender.task_done()
+
+
+def game_worker():
+    while True:
+        client, item = queueClient.get()
+        print(item)
+
+        # If action == update_chat
+        # Send to all clients message with action update_chat
+        for c in clients:
+            queueSender.put((c, item))
+
+        queueClient.task_done()
+
 
 class ServerBase:
 
@@ -67,14 +114,34 @@ class Server(ServerBase):
         ]
         
     def run(self):
+        threads = list()
+        
+        game_thread = Thread(target=game_worker)
+        game_thread.start()
+
+        sender_thread = Thread(target=sender_worker)
+        sender_thread.start()
+
+        threads.append(game_thread)
+        threads.append(sender_thread)
+
         while True:
+            logging.info('Socket accept')
             client, addr = self.socket.accept()
 
-            request = self.receive_request(client)
-            if self.check_request(request):
-                self.clients.append(client)
+            clients.append(client)
 
-            logging.info(request.headers)
+            logging.info('Starting thread')
+            client_thread = Thread(target=worker, args=(client,))
+            client_thread.daemon = True
+            client_thread.start()
+
+            threads.append(client_thread)
+
+            # request = self.receive_request(client)
+            # if self.check_request(request):
+            # self.clients.append(client)
+            # logging.info(request.headers)
 
     
     def check_request(self, request):
@@ -99,9 +166,6 @@ class Server(ServerBase):
 def main():
     server = Server()
     server.run()
-    
-    # for client in server.clients:
-    #     print(client)
 
 
 if __name__ == '__main__':
