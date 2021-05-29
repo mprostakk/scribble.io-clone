@@ -102,7 +102,29 @@ class Server:
 
             logging.info('Starting client worker thread')
             self.run_worker(self.worker, args=(client,))
+            request = self.receive_request(client)
+            if self.check_request(request):
+                self.clients.append(client)
 
+            logging.info(request.headers)
+
+    
+    def check_request(self, request):
+        if 'HELLO' in request.headers.get('Action'):
+            return True
+        else:
+            return False
+            
+    
+    def update_chat(self, client, request):
+        print(request.headers.get('data'))
+        client.send()
+    
+    def send_draw(self, request):
+        pass
+
+    def send_message(self, request):
+        return
 
 def main():
     server = Server()
