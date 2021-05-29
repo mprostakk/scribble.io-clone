@@ -1,5 +1,14 @@
 from custom_request import Request
 
+class Client:
+    def __init__(self, client, username):
+        self.client = client
+        self.username = username
+        self.points = 0
+        
+    def update_score(self, points):
+        self.points += points
+        
 
 def read(client, sepp='\r\n'):
     buffer = client.recv(1).decode('utf-8')

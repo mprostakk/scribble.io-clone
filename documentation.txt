@@ -1,21 +1,22 @@
-# from client SEND_MESSAGE - przyjmuje od usera wiadomość i wysyła ją do wszystkich, sendallem
-# Action: SEND_MESSAGE                \r\n
-# Headers-Length: 2                   \r\n
-# User: username                      \r\n
-# Content-Length: 23                  \r\n
-# Data: username, time_stamp, message \r\n
+# Action: SEND_MESSAGE
+# User: username
+# Content-Length: 90
+# Data: "{"message": "data", "timeStamp": "HH:MM:SS"}"
 
 
 
-# from server VALIDATE_MESSAGE - przy otrzymaniu wiadomosci sprawdza czy jest poprawna, odsyla info do klienta tylko jesli poprawna
-# Action: VALIDATE_MESSAGE
-# Headers-Length: 
+# if received new message propagate it forward (and if required send points info )
+# Action: ANSWER_RESULT
 # User: username
 # Content-Length: 30
-# Data: "{}"
+# Data: "{"message": "message_from_user", 
+#         "result": "true",
+#         "points": "0-100",
+#        }"
 
-
-
+# if answer changes points, send UPDATE_PLAYERS
+# Action: UPDATE_PLAYERS                                     \r\n
+# Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}" \r\n
 
 #UPDATE_PLAYERS
 # Action: UPDATE_PLAYERS                                     \r\n

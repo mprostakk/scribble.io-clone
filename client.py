@@ -1,5 +1,7 @@
 import socket
 from queue import Queue
+from json import dumps
+from datetime import datetime
 
 
 from threading import Thread
@@ -11,6 +13,7 @@ from kivy.core.window import Window
 from kivy.uix.label import Label
 from kivy.graphics import Color, Ellipse, Line
 from kivy.uix.stencilview import StencilView
+
 
 
 q = Queue()
@@ -78,7 +81,10 @@ def worker_send(s):
     while True:
         item = q_sender.get()
         print(item)
-        message = f'Action: Test\r\nData: {item}\r\n\r\n'
+        current_time = datetime.now().strftime("%H:%M:%S")
+        data_object = {"message": item, "timeStamp": current_time}
+        json_data = dumps(data_object)
+        message = f'Action: SEND_MESSAGE\r\nUser: Malika\r\nContent-Length: 200\r\nData: {json_data}\r\n\r\n'
         q_sender.task_done()
         s.sendall(message.encode('utf-8'))
 
