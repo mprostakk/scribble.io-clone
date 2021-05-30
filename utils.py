@@ -1,13 +1,24 @@
 from custom_request import Request
 
-class Client:
+
+class CustomClient:
     def __init__(self, client, username):
         self.client = client
         self.username = username
-        self.points = 0
-        
-    def update_score(self, points):
-        self.points += points
+
+class CustomClients:
+    def __init__(self):
+        self.d = {
+            # 'username': CustomClient
+        }
+
+    def add_client(self, client, username):
+        self.d[username] = client
+
+    def username_to_client(self):
+        pass
+
+
         
 
 def read(client, sepp='\r\n'):

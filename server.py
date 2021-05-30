@@ -6,7 +6,7 @@ from threading import Thread
 
 from utils import receive_request, Client
 from custom_request import Request
-from game_logic import GameLogic
+from game_logic import Game
 
 
 logging.basicConfig(
@@ -21,37 +21,6 @@ logging.basicConfig(
 HOST = 'localhost'
 PORT = 1781
 NUMBER_OF_CLIENTS = 2
-
-
-class Game:
-    def __init__(self):
-        self.dispatcher = {
-            'DRAW': self.send_draw,
-            'SEND_MESSAGE': self.send_message,
-        }
-        self.game_logic = GameLogic()
-
-    def send_draw(self, request: Request):
-        return
-
-    def send_message(self, request: Request):
-        data = request.data
-        user = request.user
-
-        result, points= self.game_logic.answer_result(data)
-        if result:
-            # Save them to user with username = user
-            print("Answer correct | [POINTS] -> ", points)
-        else:
-            print("Answer incorrect | [POINTS] -> ", points)
-
-    def dispatch(self, request: Request) -> tp.List[Request]:
-        action = request.action
-        function = self.dispatcher.get(action)
-        if function is not None:
-            return function(request)
-
-        return []
 
 
 class Server:
@@ -93,12 +62,9 @@ class Server:
             request: Request = request
             requests_to_send: tp.List[Request] = game.dispatch(request)
 
-            # TODO - send requests
-            # {action: 'update_chate', from_user: maciej, malika, data: x}
-            # {action: 'update_points', to_user: ALL }
-
-            # for c in self.clients:
-            #     self.queue_sender.put((c, str(request.headers)))
+            for c in self.clients:
+                for req in requests_to_send:
+                    self.queue_sender.put((c, str(req.parse_headers())))
 
             self.queue_client.task_done()
 

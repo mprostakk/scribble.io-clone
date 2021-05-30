@@ -19,7 +19,8 @@ class Request:
     def to_user(self) -> str:
         return self.headers.get('To_users', 'ALL')
 
-    # def parse_headers() 
+    def parse_headers():
+        pass
 
     def parse_request(self, data: str) -> None:
         stripped_data = data[:-2].split('\r\n')
