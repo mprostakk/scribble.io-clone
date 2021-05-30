@@ -8,7 +8,6 @@ class GameLogic:
     def __init__(self):
         self.current_word = 'apple'
         self.start_time = None
-        pass
 
     def current_word_setter(self, value):
         self.current_word = value
@@ -17,8 +16,8 @@ class GameLogic:
         self.start_time = value.toEpoch()
         
     def count_points(self, answer_time):
-        pattern = '%H:%M:%S'
-        epoch = int(mktime(strptime(answer_time, pattern)))
+        # pattern = '%H:%M:%S'
+        # epoch = int(mktime(strptime(answer_time, pattern)))
         return 50
         
     def detect_answer(self, message):
@@ -31,7 +30,8 @@ class GameLogic:
 
     def answer_result(self, message):
         data = message['message']
-        time = message['timeStamp']
+        # time = message['timeStamp']
+        time = ''
         is_answer = self.detect_answer(data)
         if is_answer:
             points = self.count_points(time)

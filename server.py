@@ -25,40 +25,34 @@ NUMBER_OF_CLIENTS = 2
 
 class Game:
     def __init__(self):
-        self.dispatcher = [
-            ('DRAW', self.send_draw),
-            ('SEND_MESSAGE', self.send_message),
-        ]
+        self.dispatcher = {
+            'DRAW': self.send_draw,
+            'SEND_MESSAGE': self.send_message,
+        }
+        self.game_logic = GameLogic()
 
     def send_draw(self, request: Request):
         return
 
     def send_message(self, request: Request):
-        data = request.headers['Data']
-        user = request.headers['User']
-        result, points= GameLogic.answer_result(GameLogic(), data)
+        data = request.data
+        user = request.user
+
+        result, points= self.game_logic.answer_result(data)
         if result:
             # Save them to user with username = user
             print("Answer correct | [POINTS] -> ", points)
         else:
             print("Answer incorrect | [POINTS] -> ", points)
 
-    def answer_result(self, is_correct, points):
-        '''
-        Action: ANSWER_RESULT
-        User: username
-        Content-Length: x
-        Data: {"result": "true", "points": "50"}
-        '''
-        pass
-            
+    def dispatch(self, request: Request) -> tp.List[Request]:
+        action = request.action
+        function = self.dispatcher.get(action)
+        if function is not None:
+            return function(request)
 
-    def dispatch(self, parsed_request: Request) -> tp.List[Request]:
-        request_action = parsed_request.headers['Action']
-        for action in self.dispatcher:
-            if action[0] == request_action:
-                action[1](parsed_request)
         return []
+
 
 class Server:
     def __init__(self) -> None:
@@ -69,11 +63,11 @@ class Server:
         logging.info(f'Listening to {NUMBER_OF_CLIENTS} clients')
         self.socket.listen(NUMBER_OF_CLIENTS)
 
-        self.clients: Client = list()
+        self.clients: tp.List[Client] = list()
         self.threads = list()
 
-        self.queue_client: Client = Queue()
-        self.queue_sender: Client = Queue()
+        self.queue_client: Queue = Queue()
+        self.queue_sender: Queue = Queue()
 
     def worker(self, client):
         while True:
@@ -100,6 +94,8 @@ class Server:
             requests_to_send: tp.List[Request] = game.dispatch(request)
 
             # TODO - send requests
+            # {action: 'update_chate', from_user: maciej, malika, data: x}
+            # {action: 'update_points', to_user: ALL }
 
             # for c in self.clients:
             #     self.queue_sender.put((c, str(request.headers)))
@@ -125,7 +121,7 @@ class Server:
             logging.info('Starting client worker thread')
             self.run_worker(self.worker, args=(client,))
 
-           
+
 def main():
     server = Server()
     server.run()

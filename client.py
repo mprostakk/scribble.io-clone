@@ -3,7 +3,6 @@ from queue import Queue
 from json import dumps
 from datetime import datetime
 
-
 from threading import Thread
 from kivy.clock import Clock
 
@@ -13,7 +12,6 @@ from kivy.core.window import Window
 from kivy.uix.label import Label
 from kivy.graphics import Color, Ellipse, Line
 from kivy.uix.stencilview import StencilView
-
 
 
 q = Queue()
