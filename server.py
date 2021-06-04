@@ -4,7 +4,7 @@ import typing as tp
 from queue import Queue
 from threading import Thread
 
-from utils import receive_request, Client
+from utils import receive_request
 from custom_request import Request
 from game_logic import Game
 
@@ -32,7 +32,7 @@ class Server:
         logging.info(f'Listening to {NUMBER_OF_CLIENTS} clients')
         self.socket.listen(NUMBER_OF_CLIENTS)
 
-        self.clients: tp.List[Client] = list()
+        self.clients = list()
         self.threads = list()
 
         self.queue_client: Queue = Queue()
@@ -40,11 +40,15 @@ class Server:
 
     def worker(self, client):
         while True:
-            # tmp = read(client, sepp='\r\n\r\n')
-            request = receive_request(client)
-            logging.info(f'Worker: got {request}')
-            logging.info('Worker: Pushing to queueClient')
-            self.queue_client.put((client, request))
+            try:
+                request = receive_request(client)
+                logging.info(f'Worker: got {request}')
+                logging.info('Worker: Pushing to queueClient')
+                self.queue_client.put((client, request))
+            except Exception as e:
+                print(str(e))
+                self.clients.remove(client)
+                break
 
     def sender_worker(self):
         while True:
@@ -62,9 +66,12 @@ class Server:
             request: Request = request
             requests_to_send: tp.List[Request] = game.dispatch(request)
 
+            # TODO - if there is a header for user - send to specific users
+
             for c in self.clients:
                 for req in requests_to_send:
-                    self.queue_sender.put((c, str(req.parse_headers())))
+                    h = req.parse_headers()
+                    self.queue_sender.put((c, h))
 
             self.queue_client.task_done()
 
@@ -81,8 +88,7 @@ class Server:
         while True:
             logging.info('Socket accept')
             client, addr = self.socket.accept()
-            username = "Malika"
-            self.clients.append(Client(client, username))
+            self.clients.append(client)
 
             logging.info('Starting client worker thread')
             self.run_worker(self.worker, args=(client,))
