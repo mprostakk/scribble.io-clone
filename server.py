@@ -61,7 +61,6 @@ class Server:
         game = Game()
         while True:
             client, request = self.queue_client.get()
-            print(request)
 
             request: Request = request
             requests_to_send: tp.List[Request] = game.dispatch(request)

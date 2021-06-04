@@ -31,11 +31,14 @@ class CustomClients:
         pass
 
 
+RECV_LEN = 1024
+
+
 def read(client, sepp='\r\n'):
-    buffer = client.recv(1).decode('utf-8')
+    buffer = client.recv(RECV_LEN).decode('utf-8')
 
     while not (sepp in buffer):
-        data = client.recv(1).decode('utf-8')
+        data = client.recv(RECV_LEN).decode('utf-8')
         buffer += data
 
     return buffer[:len(buffer)-2]
@@ -44,7 +47,7 @@ def read(client, sepp='\r\n'):
 def receive(client):
     data = b''
     while b'\r\n\r\n' not in data:
-        data += client.recv(1)
+        data += client.recv(RECV_LEN)
 
     data = data.decode('utf-8')
     return data

@@ -50,7 +50,7 @@ class PaintWidget(StencilView):
 
 class Screen(Widget):
     def __init__(self, **kwargs):
-        event = Clock.schedule_interval(self.queue_callback, 1 / 30.)
+        event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
         self.lines = []
         super().__init__(**kwargs)
 
