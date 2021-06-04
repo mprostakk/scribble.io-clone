@@ -62,7 +62,6 @@ class Server:
         game = Game(self.clients)
         while True:
             client, request = self.queue_client.get()
-            game.start()
 
             request: Request = request
             requests_to_send: tp.List[Request] = game.dispatch(request)
@@ -93,10 +92,14 @@ class Server:
             logging.info('Socket accept')
             client, addr = self.socket.accept()
 
-            self.clients.add_client(client, f'Player {k}')
+            username = f'Player {k}'
+            self.clients.add_client(client, username)
             k += 1
 
-            # TODO - someone entered the game
+            r = Request()
+            r.headers['Action'] = 'INIT'
+            r.user = username
+            self.queue_client.put((client, r))
 
             logging.info('Starting client worker thread')
             self.run_worker(self.worker, args=(client,))

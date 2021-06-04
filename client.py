@@ -83,6 +83,8 @@ class Screen(Widget):
             self.update_points(request)
         elif request.action == 'DRAW':
             self.update_drawing(request)
+        elif request.action == 'CURRENT_WORD':
+            self.update_current_word(request)
 
     def update_chat(self, request):
         chat_grid = self.ids.chat_grid
@@ -121,6 +123,11 @@ class Screen(Widget):
                     new_line = Line()
                     new_line.points = lines[pos]
                     self.lines.append(new_line)
+
+    def update_current_word(self, request):
+        word = request.data['message']
+        word_id = self.ids.word
+        word_id.text = word
 
 
 class TestApp(App):

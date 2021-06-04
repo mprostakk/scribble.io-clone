@@ -1,5 +1,6 @@
 import typing as tp
 from time import mktime, strptime
+import json
 
 from utils import CustomClients
 from words_list import words
@@ -50,19 +51,27 @@ class Game:
         self.dispatcher = {
             'DRAW': self.send_draw,
             'SEND_MESSAGE': self.send_message,
+            'INIT': self.get_new_user_requests
         }
         self.game_logic = GameLogic()
         self.started = False
         self.current_drawing = None
+        self.points = dict()
 
-        # self.players = tp.List[Player]
-
-    def start(self):
+    def start(self, request):
         if self.started is False:
             self.started = True
             self.current_drawing = self.clients.get_all_usernames()[0]
 
-        # TODO - update points with zero
+            requests = list()
+            requests.append(self.get_current_word_request(request))
+            requests.append(self.get_points_request())
+
+            print(requests)
+
+            return requests
+
+        return []
 
     def send_draw(self, request: Request):
         if self.current_drawing == request.user:
@@ -73,6 +82,64 @@ class Game:
         else:
             return []
 
+    def get_new_user_requests(self, request):
+        requests = list()
+        s = self.start(request)
+        requests.extend(s)
+
+        requests.append(self.get_current_word_request(request))
+        requests.append(self.get_points_request())
+        return requests
+
+    def get_current_word_request(self, request):
+        r = Request()
+        r.headers['Action'] = 'CURRENT_WORD'
+
+        print(request.user, self.current_drawing)
+
+        if request.user == self.current_drawing:
+            data = {
+                'message': self.game_logic.current_word
+            }
+        else:
+            data = {
+                'message': '***'
+            }
+
+        r.headers['Data'] = json.dumps(data)
+        return r
+
+    def get_points_request(self):
+        r = Request()
+        r.headers['Action'] = 'UPDATE_POINTS'
+        player_points = list()
+        for username in self.clients.get_all_usernames():
+            points = self.points.get(username)
+            if points is None:
+                self.points[username] = 0
+                points = 0
+
+            player_points.append({
+                'username': username,
+                'points': points
+            })
+
+        data = {
+            'message': player_points
+        }
+
+        r.headers['Data'] = json.dumps(data)
+        return r
+
+    def get_message_request(self, message):
+        r = Request()
+        r.headers['Action'] = 'UPDATE_CHAT'
+        data = {
+            'message': message
+        }
+        r.headers['Data'] = json.dumps(data)
+        return r
+
     def send_message(self, request: Request):
         data = request.data
         user = request.user
@@ -82,27 +149,15 @@ class Game:
         message = data['message']
         requests = list()
 
+        requests.append(self.get_current_word_request(request))
+
         result, points = self.game_logic.answer_result(message)
         if result:
-            # Save them to user with username = user
-            r = Request()
-            r.headers['Action'] = 'UPDATE_CHAT'
-            r.headers['Data'] = '{"message": "answer correct"}'
-            requests.append(r)
-
-            r2 = Request()
-            r2.headers['Action'] = 'UPDATE_POINTS'
-            r2.headers['Data'] = '{"message": [{"username": "malika", "points": 20}, {"username": "maciej", "points": 10}]}'
-            requests.append(r2)
-
-            print("Answer correct | [POINTS] -> ", points)
+            requests.append(self.get_message_request(f'{user}: Answer correct!'))
+            self.points[user] += 10
+            requests.append(self.get_points_request())
         else:
-            r = Request()
-            r.headers['Action'] = 'UPDATE_CHAT'
-            r.headers['Data'] = '{"message": "' + f'{message}' + '"}'
-            requests.append(r)
-
-            print("Answer incorrect | [POINTS] -> ", points)
+            requests.append(self.get_message_request(f'{user}: {message}'))
 
         return requests
 
