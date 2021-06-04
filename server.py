@@ -10,7 +10,7 @@ from game_logic import Game
 
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler()
@@ -62,9 +62,14 @@ class Server:
         game = Game(self.clients)
         while True:
             client, request = self.queue_client.get()
+            game.start()
 
             request: Request = request
             requests_to_send: tp.List[Request] = game.dispatch(request)
+            self.queue_client.task_done()
+
+            if len(requests_to_send) == 0:
+                continue
 
             # TODO - if there is a header for user - send to specific users
 
@@ -72,8 +77,6 @@ class Server:
                 for req in requests_to_send:
                     h = req.parse_headers()
                     self.queue_sender.put((c, h))
-
-            self.queue_client.task_done()
 
     def run_worker(self, target, **kwargs):
         thread = Thread(target=target, **kwargs)

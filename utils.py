@@ -44,7 +44,7 @@ class CustomClients:
         return [username for username, _ in self.d.items()]
 
 
-RECV_LEN = 1024
+RECV_LEN = 1
 
 
 def read(client, sepp='\r\n'):

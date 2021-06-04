@@ -52,11 +52,26 @@ class Game:
             'SEND_MESSAGE': self.send_message,
         }
         self.game_logic = GameLogic()
+        self.started = False
+        self.current_drawing = None
+
         # self.players = tp.List[Player]
-        # self.current_drawing = Player
+
+    def start(self):
+        if self.started is False:
+            self.started = True
+            self.current_drawing = self.clients.get_all_usernames()[0]
+
+        # TODO - update points with zero
 
     def send_draw(self, request: Request):
-        return [request]
+        if self.current_drawing == request.user:
+            r = Request()
+            r.headers['Action'] = 'DRAW'
+            r.headers['Data'] = str(request.data)
+            return [r]
+        else:
+            return []
 
     def send_message(self, request: Request):
         data = request.data
