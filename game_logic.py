@@ -1,6 +1,7 @@
 import typing as tp
 from time import mktime, strptime
 
+from utils import CustomClients
 from words_list import words
 from custom_request import Request
 
@@ -44,7 +45,8 @@ class GameLogic:
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, clients):
+        self.clients: CustomClients = clients
         self.dispatcher = {
             'DRAW': self.send_draw,
             'SEND_MESSAGE': self.send_message,
@@ -59,8 +61,10 @@ class Game:
     def send_message(self, request: Request):
         data = request.data
         user = request.user
-        message = data['message']
 
+        print(self.clients.get_all_usernames())
+
+        message = data['message']
         requests = list()
 
         result, points = self.game_logic.answer_result(message)

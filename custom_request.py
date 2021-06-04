@@ -5,6 +5,7 @@ class Request:
     def __init__(self):
         self.headers = dict()
         self.DATA_HEADER_NAME = 'Data'
+        self.user = None
 
     @property
     def data(self) -> str:
@@ -13,10 +14,6 @@ class Request:
     @property
     def action(self) -> str:
         return self.headers.get('Action')
-
-    @property
-    def user(self) -> str:
-        return self.headers.get('User')
 
     @property
     def to_user(self) -> str:

@@ -3,32 +3,45 @@ import typing as tp
 from custom_request import Request
 
 
-class CustomClient:
-    def __init__(self, client, username):
-        self.client = client
-        self.username = username
-
-
 class CustomClients:
     def __init__(self):
-        self.d = {
-            # 'username': CustomClient
-        }
+        self.d = dict()
 
     def add_client(self, client, username):
         self.d[username] = client
 
-    def username_to_client(self):
-        pass
+    def username_to_client(self, username):
+        return self.d.get(username)
+
+    def client_to_username(self, client):
+        for key, value in self.d.items():
+            if value == client:
+                return key
+
+        return None
 
     def remove_client(self, client):
-        pass
+        username = None
+        for key, value in self.d.items():
+            if value == client:
+                username = key
+                break
 
-    def remove_client_by_username(self, username):
-        pass
+        if username is not None:
+            self.d.pop(username)
 
-    def get_clients(self):
-        pass
+    def remove_client_by_username(self, username) -> None:
+        self.d.pop(username)
+
+    def get_all_clients(self) -> tp.List:
+        clients = list()
+        for key, value in self.d.items():
+            clients.append(value)
+
+        return clients
+
+    def get_all_usernames(self) -> tp.List:
+        return [username for username, _ in self.d.items()]
 
 
 RECV_LEN = 1024
