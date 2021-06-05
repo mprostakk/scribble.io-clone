@@ -107,6 +107,7 @@ class Game:
             }
 
         r.headers['Data'] = json.dumps(data)
+        r.users_to_send.append(request.user)
         return r
 
     def get_points_request(self):

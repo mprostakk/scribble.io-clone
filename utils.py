@@ -40,6 +40,18 @@ class CustomClients:
 
         return clients
 
+    def get_clients_from_request(self, request) -> tp.List:
+        users: list = request.to_users
+
+        if len(users):
+            clients = list()
+            for user in users:
+                clients.append(self.username_to_client(user))
+
+            return clients
+
+        return self.get_all_clients()
+
     def get_all_usernames(self) -> tp.List:
         return [username for username, _ in self.d.items()]
 

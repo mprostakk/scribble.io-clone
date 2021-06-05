@@ -6,6 +6,7 @@ class Request:
         self.headers = dict()
         self.DATA_HEADER_NAME = 'Data'
         self.user = None
+        self.users_to_send = list()
 
     @property
     def data(self) -> str:
@@ -16,8 +17,8 @@ class Request:
         return self.headers.get('Action')
 
     @property
-    def to_user(self) -> str:
-        return self.headers.get('To_users', 'ALL')
+    def to_users(self) -> list:
+        return self.users_to_send
 
     def parse_headers(self) -> str:
         s = ''

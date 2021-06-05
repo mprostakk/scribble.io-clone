@@ -70,12 +70,10 @@ class Server:
             if len(requests_to_send) == 0:
                 continue
 
-            # TODO - if there is a header for user - send to specific users
-
-            for c in self.clients.get_all_clients():
-                for req in requests_to_send:
-                    h = req.parse_headers()
-                    self.queue_sender.put((c, h))
+            for request_to_send in requests_to_send:
+                for client_to_send in self.clients.get_clients_from_request(request_to_send):
+                    data_to_send = request_to_send.parse_headers()
+                    self.queue_sender.put((client_to_send, data_to_send))
 
     def run_worker(self, target, **kwargs):
         thread = Thread(target=target, **kwargs)
