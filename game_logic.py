@@ -77,7 +77,7 @@ class Game:
         if self.current_drawing == request.user:
             r = Request()
             r.headers['Action'] = 'DRAW'
-            r.headers['Data'] = str(request.data)
+            r.headers['Data'] = json.dumps(request.data)
             return [r]
         else:
             return []

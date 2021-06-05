@@ -1,3 +1,4 @@
+import json
 import socket
 from queue import Queue
 from json import dumps
@@ -23,35 +24,37 @@ q_sender = Queue()
 class PaintWidget(StencilView):
     def __init__(self, **kwargs):
         self.lines = list()
+        self.k = 0
         super().__init__(**kwargs)
 
     def on_touch_down(self, touch):
         line = Line(points=(touch.x, touch.y))
         self.lines.append(line)
         touch.ud['line'] = line
+        touch.ud['line_id'] = self.k
+        self.k += 1
 
     def on_touch_move(self, touch):
         line = touch.ud.get('line')
-        if line:
-            line.points += [touch.x, touch.y]
+        line_id = touch.ud.get('line_id')
 
         request = Request()
         request.headers['Action'] = 'DRAW'
-        request.headers['Data'] = str([touch.x, touch.y])
-        request.headers['Data'] = self.parse_lines()
+
+        data = {
+            'id': line_id,
+            'x': int(touch.x),
+            'y': int(touch.y)
+        }
+
+        request.headers['Data'] = json.dumps(data)
         q_sender.put(request)
 
-    def parse_lines(self):
-        s = []
-        for line in self.lines:
-            s.append(line.points)
-
-        return str(s)
 
 class Screen(Widget):
     def __init__(self, **kwargs):
         event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
-        self.lines = []
+        self.lines = dict()
         super().__init__(**kwargs)
 
     def send_message(self):
@@ -111,18 +114,21 @@ class Screen(Widget):
             )
 
     def update_drawing(self, request):
-        lines = request.data
+        paint_widget = self.ids.paint_widget
 
-        for pos in range(0, len(lines)):
-            try:
-                line_points = self.lines[pos]
-                line_points.points = lines[pos]
-            except IndexError:
-                with self.canvas:
-                    Color(1, 0, 0, 1)
-                    new_line = Line()
-                    new_line.points = lines[pos]
-                    self.lines.append(new_line)
+        line_id = request.data['id']
+        x = request.data['x']
+        y = request.data['y']
+
+        line = self.lines.get(line_id)
+        if line is None:
+            with paint_widget.canvas:
+                Color(1, 0, 0, 1)
+                new_line = Line()
+                new_line.points = [x, y]
+                self.lines[line_id] = new_line
+        else:
+            line.points += [x, y]
 
     def update_current_word(self, request):
         word = request.data['message']
