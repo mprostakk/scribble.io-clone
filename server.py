@@ -70,6 +70,7 @@ class Server:
             if len(requests_to_send) == 0:
                 continue
 
+            # response from game to client
             for request_to_send in requests_to_send:
                 for client_to_send in self.clients.get_clients_from_request(request_to_send):
                     data_to_send = request_to_send.parse_headers()
@@ -95,7 +96,8 @@ class Server:
             k += 1
 
             r = Request()
-            r.headers['Action'] = 'INIT'
+            
+            r.headers['Action'] = 'PLAYER_INIT'
             r.user = username
             self.queue_client.put((client, r))
 

@@ -88,6 +88,8 @@ class Screen(Widget):
             self.update_drawing(request)
         elif request.action == 'CURRENT_WORD':
             self.update_current_word(request)
+        elif request.action == 'NEW_ROUND':
+            self.update_new_round(request)
 
     def update_chat(self, request):
         chat_grid = self.ids.chat_grid
@@ -96,6 +98,11 @@ class Screen(Widget):
                 text=request.data['message']
             )
         )
+
+    def update_new_round(self, request):
+        print('GOT NEW ROUND')
+        self.update_current_word(request)
+        pass
 
     def update_points(self, request):
         point_layout = self.ids.point_layout
