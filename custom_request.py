@@ -5,6 +5,7 @@ class Request:
     def __init__(self):
         self.headers = dict()
         self.DATA_HEADER_NAME = 'Data'
+        self.USERS_HEADER_NAME = 'Users'
         self.user = None
         self.users_to_send = list()
 
@@ -15,6 +16,10 @@ class Request:
     @property
     def action(self) -> str:
         return self.headers.get('Action')
+
+    @property
+    def users(self) -> str:
+        return self.headers.get('Users')
 
     @property
     def to_users(self) -> list:
@@ -34,13 +39,29 @@ class Request:
 
             if header == '':
                 continue
-
-            if self.DATA_HEADER_NAME in header:
-                self.parse_data_header(header)
+# POPRAWIĆ
+            if self.detect_headers(header):
                 continue
 
             name, data = header.split(': ')
             self.headers[name] = data
+
+
+    def detect_headers(self, header):
+        check = False
+        if self.DATA_HEADER_NAME in header:
+            check = True
+            self.parse_data_header(header)
+        if self.USERS_HEADER_NAME in header:
+            check = True
+            self.parse_users_header(header)
+        return True if check else False
+
+    def parse_users_header(self, header):
+        self.users_to_send.clear()
+        usernames: list = header.split(f'{self.USERS_HEADER_NAME}: ')[1].split(', ')
+        self.users_to_send.extend(usernames)
+        
 
     def parse_data_header(self, header):
         json_data = header.split(f'{self.DATA_HEADER_NAME}: ')[1]

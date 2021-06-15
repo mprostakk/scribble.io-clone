@@ -3,16 +3,18 @@ import socket
 from queue import Queue
 from json import dumps
 from datetime import datetime
-
 from threading import Thread
-from kivy.clock import Clock
 
+
+from kivy.clock import Clock
 from kivy.app import App
+from kivy.uix.stencilview import StencilView
+from kivy.factory import Factory
+from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
-from kivy.uix.label import Label
 from kivy.graphics import Color, Ellipse, Line
-from kivy.uix.stencilview import StencilView
+
 
 from custom_request import Request
 from utils import receive_request
@@ -56,6 +58,12 @@ class Screen(Widget):
         event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
         self.lines = dict()
         super().__init__(**kwargs)
+        self.current_color = [1, 0, 0, 1]
+
+    def set_color(self, color):
+        r, g, b = color.split(',')
+        self.current_color.clear()
+        self.current_color.extend([int(r), int(g), int(b), 1])
 
     def send_message(self):
         text_input = self.ids.text_input
@@ -88,6 +96,8 @@ class Screen(Widget):
             self.update_drawing(request)
         elif request.action == 'CURRENT_WORD':
             self.update_current_word(request)
+        elif request.action == 'NEW_ROUND':
+            self.update_new_round(request)
 
     def update_chat(self, request):
         chat_grid = self.ids.chat_grid
@@ -96,6 +106,11 @@ class Screen(Widget):
                 text=request.data['message']
             )
         )
+
+    def update_new_round(self, request):
+        # clear drawing
+        self.update_current_word(request)
+        pass
 
     def update_points(self, request):
         point_layout = self.ids.point_layout
@@ -108,7 +123,7 @@ class Screen(Widget):
             points = player.get('points')
 
             point_layout.add_widget(
-                Label(
+                Factory.UserLabel(
                     text=f'{username}: {points}'
                 )
             )
@@ -123,7 +138,7 @@ class Screen(Widget):
         line = self.lines.get(line_id)
         if line is None:
             with paint_widget.canvas:
-                Color(1, 0, 0, 1)
+                Color(*self.current_color)
                 new_line = Line()
                 new_line.points = [x, y]
                 self.lines[line_id] = new_line
@@ -159,7 +174,7 @@ if __name__ == '__main__':
     Window.minimum_width, Window.minimum_height = Window.size
 
     host = 'localhost'
-    port = 1781
+    port = 1782
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))

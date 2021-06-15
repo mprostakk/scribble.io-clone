@@ -19,7 +19,7 @@ logging.basicConfig(
 
 
 HOST = 'localhost'
-PORT = 1781
+PORT = 1782
 NUMBER_OF_CLIENTS = 2
 
 
@@ -50,7 +50,7 @@ class Server:
                 print(str(e))
                 self.clients.remove_client(client)
                 break
-
+            
     def sender_worker(self):
         while True:
             client, message = self.queue_sender.get()
@@ -70,6 +70,7 @@ class Server:
             if len(requests_to_send) == 0:
                 continue
 
+            # response from game to client
             for request_to_send in requests_to_send:
                 for client_to_send in self.clients.get_clients_from_request(request_to_send):
                     data_to_send = request_to_send.parse_headers()
@@ -95,7 +96,8 @@ class Server:
             k += 1
 
             r = Request()
-            r.headers['Action'] = 'INIT'
+            
+            r.headers['Action'] = 'INIT_PLAYER'
             r.user = username
             self.queue_client.put((client, r))
 
