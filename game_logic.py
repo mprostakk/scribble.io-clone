@@ -53,7 +53,7 @@ class Game:
         self.dispatcher = {
             'DRAW': self.send_draw,
             'SEND_MESSAGE': self.send_message,
-            'PLAYER_INIT': self.get_new_user_requests,
+            'INIT_PLAYER': self.get_new_user_requests,
             'GAME_INIT': None
         }
         self.game_logic = GameLogic()
@@ -65,12 +65,13 @@ class Game:
     def start_round(self):
         self.game_logic.start_time = datetime.now()
         self.game_logic.set_random_current_word()
-        
+
         self.current_drawing_it = (self.current_drawing_it + 1) % len(self.clients.d)
         self.current_drawing = self.clients.get_all_usernames()[self.current_drawing_it]
 
     def get_new_user_requests(self, request):
         requests = list()
+        
         if len(self.clients.d) == 1:
             self.start_round()
         
@@ -85,20 +86,18 @@ class Game:
 
         drawing_player_r.headers['Action'] = 'NEW_ROUND'
         other_players_r.headers['Action'] = 'NEW_ROUND'
-        other_players_r.headers['Users'] = ''
-        
-        for client in self.clients.get_all_usernames():
-            if client == self.current_drawing:
-                drawing_player_r.headers['Users'] = client
-            else:
-                other_players_r.headers['Users'] += (client + ', ')
-                other_players_data = {
-                    'message': self.game_logic.current_word_underlines()
-                }
+        drawing_player_r.headers['Users'] = self.current_drawing
 
-        self.get_current_word_request()        
+        
+        drawing_player_data = {
+            'message': self.game_logic.current_word
+        }
+        other_players_data = {
+            'message': self.game_logic.current_word_underlines()
+        }
         drawing_player_r.headers['Data'] = json.dumps(drawing_player_data)
         other_players_r.headers['Data'] = json.dumps(other_players_data)
+
         return [ drawing_player_r, other_players_r ]
 
 
@@ -150,6 +149,7 @@ class Game:
         r.headers['Data'] = json.dumps(data)
         return r
 
+    # Needs REFACTOR
     def send_message(self, request: Request):
         data = request.data
         user = request.user
@@ -160,14 +160,14 @@ class Game:
 
         result, points = self.game_logic.answer_result(message)
         if result:
+            if self.current_drawing == request.user:
+                return []
             requests.append(self.get_message_request(f'{user}: Answer correct!'))
             self.points[user] += points
             requests.append(self.get_points_request())
-            requests.append(self.get_message_request(f'New round, {self.current_drawing} is drawing'))
 
-            print(self.current_drawing)
             self.start_round()
-            print(self.current_drawing)
+            requests.append(self.get_message_request(f'New round, {self.current_drawing} is drawing'))
             requests.extend(self.get_new_round_request())
         else:
             requests.append(self.get_message_request(f'{user}: {message}'))

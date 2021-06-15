@@ -40,25 +40,25 @@ class Request:
             if header == '':
                 continue
 # POPRAWIĆ
-            if self.USERS_HEADER_NAME in header and self.DATA_HEADER_NAME in header:
-                self.parse_data_header(header)
-                self.parse_users_header(header)
-                continue
-
-            if self.DATA_HEADER_NAME in header:
-                self.parse_data_header(header)
-                continue
-            
-            if self.USERS_HEADER_NAME in header:
-                self.parse_users_header(header)
+            if self.detect_headers(header):
                 continue
 
             name, data = header.split(': ')
             self.headers[name] = data
 
+
+    def detect_headers(self, header):
+        check = False
+        if self.DATA_HEADER_NAME in header:
+            check = True
+            self.parse_data_header(header)
+        if self.USERS_HEADER_NAME in header:
+            check = True
+            self.parse_users_header(header)
+        return True if check else False
+
     def parse_users_header(self, header):
-        if self.USERS_HEADER_NAME not in header:
-            return
+        self.users_to_send.clear()
         usernames: list = header.split(f'{self.USERS_HEADER_NAME}: ')[1].split(', ')
         self.users_to_send.extend(usernames)
         

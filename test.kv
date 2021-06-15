@@ -1,56 +1,132 @@
 #:kivy 2.0.0
 
+<UserLabel@Label>:
+    source: None
+    color: (1,1,1)
+
+    canvas.before:
+        Color: 
+            rgba: (0,20,40, 0.2)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<WordLabel@Label>:
+    source: None
+    color: (1,1,1)
+    canvas.before:
+        Color: 
+            rgba: (90/255.0,90/255.0,90/255.0, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<Label>:
+    font_size: 16
+
+<PaintWidget>:
+    canvas.before:
+        Color: 
+            rgb: (1,1,1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<ColorButton@Button>:
+    size_hint: 1.0, 1.0
+    
+    canvas.before:
+        Color: 
+            rgba: (90/255.0,20/255.0,40/255.0, 0.4)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius:[100]
+
+
 <Screen>:
-    FloatLayout:
+    BoxLayout:
         id: main_float
-        pos: 0, 0
+        orientation: 'vertical'
         size: root.width, root.height
+        spacing: 10
 
         BoxLayout:
-            orientation: 'vertical'
+            orientation: 'horizontal'
+            size_hint: 1.0, 0.1
+            
 
-            Label:
+            WordLabel:
+                color: (1,1,1)
                 id: word
                 text: 'Word to guess'
-                size: 0, 50
-                size_hint: 1., None
+                font_size: 30
+                size: 10, 20
+
+        BoxLayout:
+            orientation: 'horizontal'
+           
+            size_hint: 1.0, 0.85
+            spacing: '10dp'
+        
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: '10dp'
+                size_hint: .15, 1.
+                id: point_layout
+
             BoxLayout:
                 orientation: 'horizontal'
-                BoxLayout:
-                    orientation: 'vertical'
-                    size_hint: .15, 1.
-                    id: point_layout
+                size_hint: .6, 1.
                 PaintWidget:
                     id: paint_widget
-                    size: 500, 500
-                    size_hint: None, None
+                    size: self.width, self.height
                 BoxLayout:
                     orientation: 'vertical'
-                    size_hint: .2, 1.
+                    size_hint: 0.2, .3
+                    ColorButton:
+                        id: color_blue
+                        text: 'Blue'
+                        on_press: root.set_color('0, 0, 1')
+                    ColorButton:
+                        id: color_red
+                        text: 'Red'
+                        on_press: root.set_color('1, 0, 0')
+                    ColorButton:
+                        id: color_green
+                        text: 'Green'
+                        on_press: root.set_color('0, 1, 0')
 
-                    ScrollView:
-                        do_scroll_x: False
-                        do_scroll_y: True
-                        GridLayout:
-                            id: chat_grid
-                            cols: 1
-                            row_default_height: '20dp'
-                            row_force_default: True
-                            spacing: 0, 0
-                            padding: 0, 0
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: .25, 1.
+                ScrollView:
+                    do_scroll_x: False
+                    do_scroll_y: True
+                    GridLayout:
+                        id: chat_grid
+                        cols: 1
+                        row_default_height: '20dp'
+                        row_force_default: True
+                        spacing: 0, 0
+                        padding: 0, 0
 
-                    BoxLayout:
-                        orientation: 'horizontal'
-                        size: 0, 50
-                        size_hint: 1., None
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size: self.width, self.height
+                    size_hint: 1., None
+                    
+                    TextInput:
+                        id: text_input
+                        size_hint: .8, 1
+                        write_tab: False
+                        multiline: False
+                        on_text_validate: root.send_message()
 
-                        TextInput:
-                            id: text_input
-                            size_hint: .8, 1
+                    Button:
+                        id: send
+                        text: 'Send'
+                        size: 70, 0
+                        size_hint: None, 1.
+                        on_press: root.send_message()
 
-                        Button:
-                            id: send
-                            text: 'Send'
-                            size: 70, 0
-                            size_hint: None, 1.
-                            on_press: root.send_message()
