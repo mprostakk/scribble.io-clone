@@ -1,20 +1,79 @@
+import typing as tp
+
 from custom_request import Request
 
 
+class CustomClients:
+    def __init__(self):
+        self.d = dict()
+
+    def add_client(self, client, username):
+        self.d[username] = client
+
+    def username_to_client(self, username):
+        return self.d.get(username)
+
+    def client_to_username(self, client):
+        for key, value in self.d.items():
+            if value == client:
+                return key
+
+        return None
+
+    def remove_client(self, client):
+        username = None
+        for key, value in self.d.items():
+            if value == client:
+                username = key
+                break
+
+        if username is not None:
+            self.d.pop(username)
+
+    def remove_client_by_username(self, username) -> None:
+        self.d.pop(username)
+
+    def get_all_clients(self) -> tp.List:
+        clients = list()
+        for key, value in self.d.items():
+            clients.append(value)
+
+        return clients
+
+    def get_clients_from_request(self, request) -> tp.List:
+        users: list = request.to_users
+
+        if len(users):
+            clients = list()
+            for user in users:
+                clients.append(self.username_to_client(user))
+
+            return clients
+
+        return self.get_all_clients()
+
+    def get_all_usernames(self) -> tp.List:
+        return [username for username, _ in self.d.items()]
+
+
+RECV_LEN = 1
+
+
 def read(client, sepp='\r\n'):
-    buffer = client.recv(1).decode('utf-8')
+    buffer = client.recv(RECV_LEN).decode('utf-8')
 
     while not (sepp in buffer):
-        data = client.recv(1).decode('utf-8')
+        data = client.recv(RECV_LEN).decode('utf-8')
         buffer += data
 
     return buffer[:len(buffer)-2]
 
 
-def receive(client) -> str:
+def receive(client):
     data = b''
     while b'\r\n\r\n' not in data:
-        data += client.recv(1)
+        data += client.recv(RECV_LEN)
+
     data = data.decode('utf-8')
     return data
 

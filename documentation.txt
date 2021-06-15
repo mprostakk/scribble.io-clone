@@ -1,0 +1,59 @@
+# Action: SEND_MESSAGE
+# User: username
+# Content-Length: 90
+# Data: "{"message": "data", "timeStamp": "HH:MM:SS"}"
+
+
+
+# if received new message propagate it forward (and if required send points info )
+# Action: ANSWER_RESULT
+# User: username
+# Content-Length: 30
+# Data: "{"message": "message_from_user", 
+#         "result": "true",
+#         "points": "0-100",
+#        }"
+
+# if answer changes points, send UPDATE_PLAYERS
+# Action: UPDATE_PLAYERS                                     \r\n
+# Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}" \r\n
+
+#UPDATE_PLAYERS
+# Action: UPDATE_PLAYERS                                     \r\n
+# Data: "{"player_list": [{"maciej": 90}, {"malika": 100}]}" \r\n
+
+
+        
+VALIDATE_ANSWER
+# receive message
+# if  validate answear
+    # send_confirmation
+# send_to_all
+
+
+# self.base.s.sendall("tablica obiektow typu ChatMessage".encode('utf-8'))
+
+
+
+
+--------------------------------------------------------------
+
+
+# --- METHODS FROM CLIENT
+# LOGIN (nickname) [wpuszczamy po wpisaniu na poczatku / czy nick zajety]
+# START [każdy może kliknac start]
+# DRAW [tylko ten co moze rysowac]
+# SEND_CHAT [wszyscy]
+# [jesli rysuje-mam zabklowoany wysylanie w chat]
+
+
+# --- METHODS FROM SERVER
+# TURN (id)
+# SEND_DRAW
+# UPDATE_CHAT
+# UPDATE_PLAYERS [wysylamy tez punkty] [sortujemy po ilosci punktow]
+# UPDATE_REMAINING_TIME [np. 00:45]
+# START_GAME
+# - send to guessing string word slots np. ___ ___ __
+# - send to drawer word np. ala ma kota
+# SEND_END_GAME_STATUS [np. WON, LOST, 50pnkt]

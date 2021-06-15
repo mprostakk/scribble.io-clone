@@ -1,6 +1,8 @@
+import json
 import socket
 from queue import Queue
-
+from json import dumps
+from datetime import datetime
 
 from threading import Thread
 from kivy.clock import Clock
@@ -12,26 +14,47 @@ from kivy.uix.label import Label
 from kivy.graphics import Color, Ellipse, Line
 from kivy.uix.stencilview import StencilView
 
+from custom_request import Request
+from utils import receive_request
 
 q = Queue()
 q_sender = Queue()
 
 
 class PaintWidget(StencilView):
+    def __init__(self, **kwargs):
+        self.lines = list()
+        self.k = 0
+        super().__init__(**kwargs)
+
     def on_touch_down(self, touch):
-        with self.canvas:
-            Color(1, 0, 0)
-            touch.ud['line'] = Line(points=(touch.x, touch.y))
+        line = Line(points=(touch.x, touch.y))
+        self.lines.append(line)
+        touch.ud['line'] = line
+        touch.ud['line_id'] = self.k
+        self.k += 1
 
     def on_touch_move(self, touch):
         line = touch.ud.get('line')
-        if line:
-            line.points += [touch.x, touch.y]
+        line_id = touch.ud.get('line_id')
+
+        request = Request()
+        request.headers['Action'] = 'DRAW'
+
+        data = {
+            'id': line_id,
+            'x': int(touch.x),
+            'y': int(touch.y)
+        }
+
+        request.headers['Data'] = json.dumps(data)
+        q_sender.put(request)
 
 
 class Screen(Widget):
     def __init__(self, **kwargs):
-        event = Clock.schedule_interval(self.test_callback, 1 / 30.)
+        event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
+        self.lines = dict()
         super().__init__(**kwargs)
 
     def send_message(self):
@@ -40,25 +63,77 @@ class Screen(Widget):
         if text == '':
             return
 
-        q_sender.put(text)
+        data_object = {'message': text}
+        json_data = dumps(data_object)
+
+        request = Request()
+        request.headers['Action'] = 'SEND_MESSAGE'
+        request.headers['Data'] = json_data
+        q_sender.put(request)
+
         text_input.text = ''
 
-        # paint = self.ids.paint_widget
-        # img = paint.export_as_image()
-        # print(img)
-        # paint.export_to_png('test.png')
-
-    def test_callback(self, dt):
+    def queue_callback(self, dt):
         if q.empty() is False:
-            data = q.get()
+            request = q.get()
             q.task_done()
+            self.custom_dispatch(request)
 
-            chat_grid = self.ids.chat_grid
-            chat_grid.add_widget(
+    def custom_dispatch(self, request):
+        if request.action == 'UPDATE_CHAT':
+            self.update_chat(request)
+        elif request.action == 'UPDATE_POINTS':
+            self.update_points(request)
+        elif request.action == 'DRAW':
+            self.update_drawing(request)
+        elif request.action == 'CURRENT_WORD':
+            self.update_current_word(request)
+
+    def update_chat(self, request):
+        chat_grid = self.ids.chat_grid
+        chat_grid.add_widget(
+            Label(
+                text=request.data['message']
+            )
+        )
+
+    def update_points(self, request):
+        point_layout = self.ids.point_layout
+
+        while len(point_layout.children):
+            point_layout.remove_widget(point_layout.children[0])
+
+        for player in request.data['message']:
+            username = player.get('username')
+            points = player.get('points')
+
+            point_layout.add_widget(
                 Label(
-                    text=data
+                    text=f'{username}: {points}'
                 )
             )
+
+    def update_drawing(self, request):
+        paint_widget = self.ids.paint_widget
+
+        line_id = request.data['id']
+        x = request.data['x']
+        y = request.data['y']
+
+        line = self.lines.get(line_id)
+        if line is None:
+            with paint_widget.canvas:
+                Color(1, 0, 0, 1)
+                new_line = Line()
+                new_line.points = [x, y]
+                self.lines[line_id] = new_line
+        else:
+            line.points += [x, y]
+
+    def update_current_word(self, request):
+        word = request.data['message']
+        word_id = self.ids.word
+        word_id.text = word
 
 
 class TestApp(App):
@@ -68,23 +143,15 @@ class TestApp(App):
 
 def worker(s):
     while True:
-        buffer = s.recv(100)
-        print('Worker:')
-        print(buffer.decode('utf-8'))
-        q.put(buffer.decode('utf-8'))
+        request = receive_request(s)
+        q.put(request)
 
 
 def worker_send(s):
     while True:
-        item = q_sender.get()
-        print(item)
-        message = f'Action: Test\r\nData: {item}\r\n\r\n'
+        request = q_sender.get()
+        s.sendall(request.parse_headers().encode('utf-8'))
         q_sender.task_done()
-        s.sendall(message.encode('utf-8'))
-
-
-def my_callback(dt):
-        print('My callback is called', dt)
 
 
 if __name__ == '__main__':
@@ -104,7 +171,5 @@ if __name__ == '__main__':
     sender_thread = Thread(target=worker_send, args=(s,))
     sender_thread.daemon = True
     sender_thread.start()
-
-    # event = Clock.schedule_interval(my_callback, 1 / 30.)
 
     TestApp().run()

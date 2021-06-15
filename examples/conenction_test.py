@@ -22,8 +22,10 @@ worker_thread.start()
 
 
 while True:
-    x = input('Test: ')
-    send_handshake = f'Action: {x}\r\nTest: 123\r\n\r\n'
+    x = input('Action: ')
+    d = input('Data:')
+    u = input('User')
+    send_handshake = f'Action: {x}\r\nData: {"{"}"message": "{d}"{"}"}\r\nUser: {u}\r\n\r\n'
     s.sendall(send_handshake.encode('utf-8'))
 
 
