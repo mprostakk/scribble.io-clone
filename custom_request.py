@@ -67,3 +67,39 @@ class Request:
         json_data = header.split(f'{self.DATA_HEADER_NAME}: ')[1]
         data = loads(json_data)
         self.headers[self.DATA_HEADER_NAME] = data
+
+
+class DrawRequest(Request):
+    def __init__(self):
+        self.x = None
+        self.y = None
+        self.color = None
+
+    @property
+    def get_color(self):
+        return self.color
+    
+    @property
+    def get_x(self):
+        return self.x
+    
+    @property
+    def get_y(self):
+        return self.y
+    
+    def parse_draw(self):
+        self.x = self.headers.get('X')
+        self.y = self.headers.get('Y')
+        self.color = self.headers.get('Color')
+
+
+class MessageRequest(Request):
+    def __init__(self):
+        self.message = ''
+
+    @property
+    def get_message(self):
+        return self.message
+        
+    def parse_message(self):
+        self.message = self.headers.get('Message')

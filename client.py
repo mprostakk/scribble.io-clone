@@ -98,6 +98,8 @@ class Screen(Widget):
             self.update_current_word(request)
         elif request.action == 'NEW_ROUND':
             self.update_new_round(request)
+        # elif request.action == 'CLEAR_CANVAS':
+        #     self.clear_canvas()
 
     def update_chat(self, request):
         chat_grid = self.ids.chat_grid
@@ -110,7 +112,7 @@ class Screen(Widget):
     def update_new_round(self, request):
         # clear drawing
         self.update_current_word(request)
-        pass
+        self.clear_canvas()
 
     def update_points(self, request):
         point_layout = self.ids.point_layout
@@ -144,6 +146,11 @@ class Screen(Widget):
                 self.lines[line_id] = new_line
         else:
             line.points += [x, y]
+        
+    def clear_canvas(self):
+        paint_widget = self.ids.paint_widget
+        paint_widget.canvas.clear()
+        self.lines = dict()
 
     def update_current_word(self, request):
         word = request.data['message']
