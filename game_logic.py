@@ -5,7 +5,7 @@ from random import choice
 
 from utils import CustomClients
 from words_list import words
-from custom_request import Request
+from custom_request import MessageRequest, Request
 
 
 MAX_TIME = 120
@@ -160,9 +160,13 @@ class Game:
 
     # Needs REFACTOR
     def send_message(self, request: Request):
+
         data = request.data
         user = request.user
         message = data['message']
+
+        # message_request = MessageRequest.create_from_base(request)
+        # message = message_request.message
 
         requests = list()
         # requests.append(self.get_current_word_request(request))
