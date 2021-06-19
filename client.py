@@ -4,7 +4,7 @@ from queue import Queue
 from json import dumps
 from datetime import datetime
 from threading import Thread
-
+import ssl
 
 from kivy.clock import Clock
 from kivy.app import App
@@ -12,6 +12,7 @@ from kivy.uix.stencilview import StencilView
 from kivy.factory import Factory
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
+
 from kivy.core.window import Window
 from kivy.graphics import Color, Ellipse, Line
 
@@ -22,6 +23,8 @@ from utils import receive_request
 q = Queue()
 q_sender = Queue()
 
+HOST = 'localhost'
+PORT = 1783
 
 class PaintWidget(StencilView):
     def __init__(self, **kwargs):
@@ -55,9 +58,10 @@ class PaintWidget(StencilView):
 
 class Screen(Widget):
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
         self.lines = dict()
-        super().__init__(**kwargs)
+
         self.current_color = [1, 0, 0, 1]
 
     def set_color(self, color):
@@ -180,17 +184,20 @@ if __name__ == '__main__':
     Window.size = (800, 600)
     Window.minimum_width, Window.minimum_height = Window.size
 
-    host = 'localhost'
-    port = 1782
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
+    context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile='certs/server.crt')
+    context.load_cert_chain('certs/client.crt', 'certs/client.key')
+    
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((HOST, PORT))
 
-    worker_thread = Thread(target=worker, args=(s,))
+    ssl_socket = context.wrap_socket(sock, server_hostname=HOST)
+    
+    worker_thread = Thread(target=worker, args=(ssl_socket,))
     worker_thread.daemon = True
     worker_thread.start()
 
-    sender_thread = Thread(target=worker_send, args=(s,))
+    sender_thread = Thread(target=worker_send, args=(ssl_socket,))
     sender_thread.daemon = True
     sender_thread.start()
 
