@@ -3,6 +3,7 @@ import logging
 import typing as tp
 from queue import Queue
 from threading import Thread
+import ssl
 
 from utils import receive_request, CustomClients
 from custom_request import Request
@@ -20,24 +21,36 @@ logging.basicConfig(
 
 
 HOST = 'localhost'
-PORT = 1782
+PORT = 1783
 NUMBER_OF_CLIENTS = 2
-
 
 class Server:
     def __init__(self) -> None:
         logging.info('Creating socket')
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((HOST, PORT))
 
-        logging.info(f'Listening to {NUMBER_OF_CLIENTS} clients')
-        self.socket.listen(NUMBER_OF_CLIENTS)
+        
 
+        self.ssl_socket = self.create_ssl_socket()
+        
         self.threads = list()
         self.clients = CustomClients()
 
         self.queue_client: Queue = Queue()
         self.queue_sender: Queue = Queue()
+
+    def create_ssl_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((HOST, PORT))
+        logging.info(f'Listening to {NUMBER_OF_CLIENTS} clients')
+        sock.listen(NUMBER_OF_CLIENTS)
+
+
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile='certs/client.crt')
+        context.load_cert_chain(certfile='certs/server.crt', keyfile='certs/server.key')
+        ssl_socket = context.wrap_socket(sock, server_side=True)
+      
+
+        return ssl_socket
 
     def worker(self, client):
         while True:
@@ -90,7 +103,7 @@ class Server:
         k = 1
         while True:
             logging.info('Socket accept')
-            client, addr = self.socket.accept()
+            client, addr = self.ssl_socket.accept()
 
             username = f'Player {k}'
             self.clients.add_client(client, username)

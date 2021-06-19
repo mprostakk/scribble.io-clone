@@ -43,7 +43,6 @@ class Request:
 
             if header == '':
                 continue
-# POPRAWIĆ
             if self.detect_headers(header):
                 continue
 
