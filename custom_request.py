@@ -9,6 +9,10 @@ class Request:
         self.user = None
         self.users_to_send = list()
 
+    @staticmethod
+    def create_from_base(self, request):
+        raise NotImplementedError
+
     @property
     def data(self) -> str:
         return self.headers.get(self.DATA_HEADER_NAME)
@@ -67,3 +71,76 @@ class Request:
         json_data = header.split(f'{self.DATA_HEADER_NAME}: ')[1]
         data = loads(json_data)
         self.headers[self.DATA_HEADER_NAME] = data
+
+
+
+ERROR_DESCRIPTIONS = {
+    401: 'Authorization Failed - session_id unknown',
+    400: 'Syntax Error - could not parse incoming request',
+    402: 'Unkown Action Type',
+    412: 'Points update failed - unkown username',
+    500: 'Internal server error'
+}
+
+
+ERROR_CODES = {
+    'SYNTAX_ERROR': 400,
+    'AUTH_FAILED': 401,
+    'UNKOWN_ACTION_TYPE': 402,
+    'FAILED_UPDATE_POINTS': 412,
+    'INTERNAL_SERVER_ERROR': 500
+}
+
+
+class ContentTypeJsonMixin:
+    def content_type(self):
+        return 'json'
+
+
+class DrawRequest(Request, ContentTypeJsonMixin):
+    def __init__(self):
+        self.x = None
+        self.y = None
+        self.color = None
+        self.action = 'DRAW'
+
+    @property
+    def get_color(self):
+        return self.color
+    
+    @property
+    def get_x(self):
+        return self.x
+    
+    @property
+    def get_y(self):
+        return self.y
+    
+    def parse_draw(self):
+        self.x = self.headers.get('X')
+        self.y = self.headers.get('Y')
+        self.color = self.headers.get('Color')
+
+
+class MessageRequest(Request, ContentTypeJsonMixin):
+    def __init__(self):
+        self.message = ''
+        self.action = 'UPDATE_CHAT'
+        self.user_session_id = None
+        self.data_length = -1
+        
+    def set_data_length(self):
+        self.data_length = len(self.message) 
+
+    @property
+    def get_message(self):
+        return self.message
+        
+    def parse_message(self):
+        self.message = self.headers.get('Message')
+
+    @staticmethod
+    def create_from_base(request):
+        r = MessageRequest()
+        r.headers = request.headers
+        return r

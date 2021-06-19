@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 
 
+
 HOST = 'localhost'
 PORT = 1782
 NUMBER_OF_CLIENTS = 2

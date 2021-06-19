@@ -5,7 +5,7 @@ from random import choice
 
 from utils import CustomClients
 from words_list import words
-from custom_request import Request
+from custom_request import MessageRequest, Request
 
 
 MAX_TIME = 120
@@ -86,8 +86,12 @@ class Game:
 
         drawing_player_r.headers['Action'] = 'NEW_ROUND'
         other_players_r.headers['Action'] = 'NEW_ROUND'
-        drawing_player_r.headers['Users'] = self.current_drawing
 
+        usernames = self.clients.get_all_usernames()
+        usernames.remove(self.current_drawing)
+        other_players_r.users_to_send.extend(usernames)
+
+        drawing_player_r.users_to_send.append(self.current_drawing)
         
         drawing_player_data = {
             'message': self.game_logic.current_word
@@ -100,6 +104,11 @@ class Game:
 
         return [ drawing_player_r, other_players_r ]
 
+    # def get_request_for_clearing_canvas(self):
+    #     canvas_request = Request()
+    #     canvas_request.headers['Action'] = 'CLEAR_CANVAS'
+
+    #     return canvas_request
 
     def get_current_word_request(self, request):
         r = Request()
@@ -151,12 +160,16 @@ class Game:
 
     # Needs REFACTOR
     def send_message(self, request: Request):
+
         data = request.data
         user = request.user
         message = data['message']
 
+        # message_request = MessageRequest.create_from_base(request)
+        # message = message_request.message
+
         requests = list()
-        requests.append(self.get_current_word_request(request))
+        # requests.append(self.get_current_word_request(request))
 
         result, points = self.game_logic.answer_result(message)
         if result:
@@ -169,6 +182,8 @@ class Game:
             self.start_round()
             requests.append(self.get_message_request(f'New round, {self.current_drawing} is drawing'))
             requests.extend(self.get_new_round_request())
+
+            # request.append(self.get_request_for_clearing_canvas())            
         else:
             requests.append(self.get_message_request(f'{user}: {message}'))
 
