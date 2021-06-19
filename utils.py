@@ -1,14 +1,34 @@
 import typing as tp
-
+from uuid import uuid4
 from custom_request import Request
 
 
 class CustomClients:
     def __init__(self):
         self.d = dict()
+        self.sessions = dict()
 
     def add_client(self, client, username):
         self.d[username] = client
+
+        session_id = self.init_session_id()
+        while self.is_session_id_taken(session_id):
+            session_id = self.init_session_id()
+
+        self.sessions[username] = session_id
+
+    def is_session_id_taken(self, session_id) -> bool:
+        for key, value in self.sessions.items():
+            if value == session_id:
+                return True
+        
+        return False
+
+    def get_session_id(self, username):
+        return self.sessions.get(username)
+
+    def init_session_id(self):
+        return uuid4()
 
     def username_to_client(self, username):
         return self.d.get(username)

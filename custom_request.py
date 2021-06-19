@@ -1,5 +1,6 @@
 from json import loads
-
+from uuid import uuid4
+from exceptions import ERROR_CODES, ServerErrorException
 
 class Request:
     def __init__(self):
@@ -8,6 +9,7 @@ class Request:
         self.USERS_HEADER_NAME = 'Users'
         self.user = None
         self.users_to_send = list()
+        self.session_id = None
 
     @staticmethod
     def create_from_base(self, request):
@@ -28,6 +30,9 @@ class Request:
     @property
     def to_users(self) -> list:
         return self.users_to_send
+
+    def init_session_id(self):
+        self.session_id = uuid4()
 
     def parse_headers(self) -> str:
         s = ''
@@ -58,50 +63,39 @@ class Request:
         if self.USERS_HEADER_NAME in header:
             check = True
             self.parse_users_header(header)
-        return True if check else False
+        return check
 
     def parse_users_header(self, header):
         self.users_to_send.clear()
         usernames: list = header.split(f'{self.USERS_HEADER_NAME}: ')[1].split(', ')
         self.users_to_send.extend(usernames)
-        
 
     def parse_data_header(self, header):
         json_data = header.split(f'{self.DATA_HEADER_NAME}: ')[1]
         data = loads(json_data)
         self.headers[self.DATA_HEADER_NAME] = data
 
-
-
-ERROR_DESCRIPTIONS = {
-    401: 'Authorization Failed - session_id unknown',
-    400: 'Syntax Error - could not parse incoming request',
-    402: 'Unkown Action Type',
-    412: 'Points update failed - unkown username',
-    500: 'Internal server error'
-}
-
-
-ERROR_CODES = {
-    'SYNTAX_ERROR': 400,
-    'AUTH_FAILED': 401,
-    'UNKOWN_ACTION_TYPE': 402,
-    'FAILED_UPDATE_POINTS': 412,
-    'INTERNAL_SERVER_ERROR': 500
-}
-
-
+ 
 class ContentTypeJsonMixin:
     def content_type(self):
         return 'json'
 
 
-class DrawRequest(Request, ContentTypeJsonMixin):
+class ContentLengthMixin:
+    def get_content_length(self):
+        return len(self.headers.get('Data'))
+
+    def validate_content_length(self) -> bool:
+        return int(self.headers.get('Content-Length')) == self.get_content_length()
+
+class DrawRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
     def __init__(self):
+        super().__init__()
+
         self.x = None
         self.y = None
         self.color = None
-        self.action = 'DRAW'
+        self.headers['Action'] = 'DRAW'
 
     @property
     def get_color(self):
@@ -119,15 +113,23 @@ class DrawRequest(Request, ContentTypeJsonMixin):
         self.x = self.headers.get('X')
         self.y = self.headers.get('Y')
         self.color = self.headers.get('Color')
+    
+    def parse_from_base(self, request):
+        self.headers = request.headers
+
+    def validate(self):
+        pass
 
 
-class MessageRequest(Request, ContentTypeJsonMixin):
-    def __init__(self):
+class MessageRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
+    def __init__(self):     
+        super().__init__()
         self.message = ''
-        self.action = 'UPDATE_CHAT'
+        self.headers['Action'] = 'UPDATE_CHAT'
         self.user_session_id = None
         self.data_length = -1
         
+
     def set_data_length(self):
         self.data_length = len(self.message) 
 
@@ -138,8 +140,30 @@ class MessageRequest(Request, ContentTypeJsonMixin):
     def parse_message(self):
         self.message = self.headers.get('Message')
 
-    @staticmethod
-    def create_from_base(request):
-        r = MessageRequest()
-        r.headers = request.headers
-        return r
+    def parse_from_base(self, request):
+        self.headers = request.headers
+    
+    def validate(self):
+        pass
+
+
+class CurrentWordRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
+    def __init__(self):     
+        super().__init__()
+        self.message = ''
+        self.headers['Action'] = 'CURRENT_WORD'
+        self.data_length = -1
+
+    def parse_message(self):
+        self.message = self.headers.get('Message')
+
+    def parse_from_base(self, request):
+        self.headers = request.headers
+
+    def set_data_length(self):
+        self.data_length = len(self.message) 
+        
+    @property
+    def get_message(self):
+        return self.message
+        

@@ -18,18 +18,13 @@ logging.basicConfig(
     ]
 )
 
-
-
 HOST = 'localhost'
-PORT = 1783
+PORT = 1782
 NUMBER_OF_CLIENTS = 2
 
 class Server:
     def __init__(self) -> None:
         logging.info('Creating socket')
-
-        
-
         self.ssl_socket = self.create_ssl_socket()
         
         self.threads = list()
@@ -41,14 +36,11 @@ class Server:
     def create_ssl_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind((HOST, PORT))
-        logging.info(f'Listening to {NUMBER_OF_CLIENTS} clients')
         sock.listen(NUMBER_OF_CLIENTS)
-
 
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile='certs/client.crt')
         context.load_cert_chain(certfile='certs/server.crt', keyfile='certs/server.key')
         ssl_socket = context.wrap_socket(sock, server_side=True)
-      
 
         return ssl_socket
 
@@ -113,6 +105,8 @@ class Server:
             
             r.headers['Action'] = 'INIT_PLAYER'
             r.user = username
+            r.session_id = self.clients.get_session_id(username)
+
             self.queue_client.put((client, r))
 
             logging.info('Starting client worker thread')

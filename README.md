@@ -6,12 +6,9 @@ Server built with python sockets
 
 ## Todo
 
-Maciej:
+- ZAIMPLEMENTOWAC VALIDATE
+- W MOMENCIE OTRZYMANIA REQUEST (parse_request) robimy validate
 
-- Request - contentlength
+  - content-length
 
-Malika:
-
-- Szyfrowanie
-- Session Id
-- Content-length
+- W MOMENCIE TWORZENIA SOCKETOW ROBIMY TRY CATCHE
