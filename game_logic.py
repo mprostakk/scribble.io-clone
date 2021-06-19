@@ -5,7 +5,7 @@ from random import choice
 
 from utils import CustomClients
 from words_list import words
-from custom_request import MessageRequest, Request, DrawRequest
+from custom_request import MessageRequest, Request, DrawRequest, CurrentWordRequest
 from exceptions import ServerErrorException
 
 
@@ -66,7 +66,6 @@ class Game:
         try:
             request.validate()
         except ServerErrorException as e:
-            
             error_request = Request()
             error_request.headers['Action'] = 'ERROR'
             error_request.to_users.append(request.user)
@@ -117,6 +116,11 @@ class Game:
         return [ drawing_player_r, other_players_r ]
 
     def get_current_word_request(self, request):
+        current_word_request = CurrentWordRequest()
+        current_word_request.parse_from_base(request)
+        current_word_request.headers['Action'] = 'CURRENT_WORD'
+
+        
         r = Request()
         r.headers['Action'] = 'CURRENT_WORD'
 

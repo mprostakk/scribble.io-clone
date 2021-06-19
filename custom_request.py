@@ -69,15 +69,12 @@ class Request:
         self.users_to_send.clear()
         usernames: list = header.split(f'{self.USERS_HEADER_NAME}: ')[1].split(', ')
         self.users_to_send.extend(usernames)
-        
 
     def parse_data_header(self, header):
         json_data = header.split(f'{self.DATA_HEADER_NAME}: ')[1]
         data = loads(json_data)
         self.headers[self.DATA_HEADER_NAME] = data
 
-    def validate(self):
-        raise NotImplementedError
  
 class ContentTypeJsonMixin:
     def content_type(self):
@@ -86,10 +83,10 @@ class ContentTypeJsonMixin:
 
 class ContentLengthMixin:
     def get_content_length(self):
-        return len(self.data)
+        return len(self.headers.get('Data'))
 
     def validate_content_length(self) -> bool:
-        return self.headers.get('Content-Length') == self.get_content_length()
+        return int(self.headers.get('Content-Length')) == self.get_content_length()
 
 class DrawRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
     def __init__(self):
@@ -98,7 +95,6 @@ class DrawRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
         self.x = None
         self.y = None
         self.color = None
-
         self.headers['Action'] = 'DRAW'
 
     @property
@@ -117,33 +113,22 @@ class DrawRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
         self.x = self.headers.get('X')
         self.y = self.headers.get('Y')
         self.color = self.headers.get('Color')
-
-
     
     def parse_from_base(self, request):
         self.headers = request.headers
 
-    
-    def validate_syntax(self) -> bool:
-
-        return True
-
-    
     def validate(self):
-        if not self.validate_syntax():
-            raise ServerErrorException('SYNTAX_ERROR')
-        if not super().validate_content_length(): 
-            raise ServerErrorException('CONTENT_LENGTH')
+        pass
 
 
 class MessageRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
     def __init__(self):     
         super().__init__()
-
         self.message = ''
         self.headers['Action'] = 'UPDATE_CHAT'
         self.user_session_id = None
         self.data_length = -1
+        
 
     def set_data_length(self):
         self.data_length = len(self.message) 
@@ -157,15 +142,28 @@ class MessageRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
 
     def parse_from_base(self, request):
         self.headers = request.headers
-
-    def validate_syntax(self) -> bool:
-
-        return True
     
     def validate(self):
-        if not self.validate_syntax():
-            raise ServerErrorException('SYNTAX_ERROR')
-        if not super().validate_content_length(): 
-            raise ServerErrorException('CONTENT_LENGTH')
+        pass
 
 
+class CurrentWordRequest(Request, ContentTypeJsonMixin, ContentLengthMixin):
+    def __init__(self):     
+        super().__init__()
+        self.message = ''
+        self.headers['Action'] = 'CURRENT_WORD'
+        self.data_length = -1
+
+    def parse_message(self):
+        self.message = self.headers.get('Message')
+
+    def parse_from_base(self, request):
+        self.headers = request.headers
+
+    def set_data_length(self):
+        self.data_length = len(self.message) 
+        
+    @property
+    def get_message(self):
+        return self.message
+        
