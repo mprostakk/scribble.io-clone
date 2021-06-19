@@ -7,7 +7,7 @@ Server built with python sockets
 Dokumentacja w folderze documentation
 
 
-# Jak uruchomić: "
+# Jak uruchomić: 
 
 ```
 pip install -r requirements.txt
@@ -23,3 +23,5 @@ Uruchomienie dowolnej ilości klientów
 ```
 python3 client.py
 ```
+
+
