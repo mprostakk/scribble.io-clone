@@ -5,7 +5,8 @@ from random import choice
 
 from utils import CustomClients
 from words_list import words
-from custom_request import MessageRequest, Request
+from custom_request import MessageRequest, Request, DrawRequest
+from exceptions import ServerErrorException
 
 
 MAX_TIME = 120
@@ -61,6 +62,17 @@ class Game:
         self.current_drawing_it = 0
         self.points = dict()
 
+    def find_exceptions(self, request): 
+        try:
+            request.validate()
+        except ServerErrorException as e:
+            
+            error_request = Request()
+            error_request.headers['Action'] = 'ERROR'
+            error_request.to_users.append(request.user)
+            error_request.headers['Error-Message'] = str(e)
+            return error_request
+        return None
 
     def start_round(self):
         self.game_logic.start_time = datetime.now()
@@ -103,12 +115,6 @@ class Game:
         other_players_r.headers['Data'] = json.dumps(other_players_data)
 
         return [ drawing_player_r, other_players_r ]
-
-    # def get_request_for_clearing_canvas(self):
-    #     canvas_request = Request()
-    #     canvas_request.headers['Action'] = 'CLEAR_CANVAS'
-
-    #     return canvas_request
 
     def get_current_word_request(self, request):
         r = Request()
@@ -158,18 +164,26 @@ class Game:
         r.headers['Data'] = json.dumps(data)
         return r
 
-    # Needs REFACTOR
+
     def send_message(self, request: Request):
+
+        request_message = MessageRequest()
+        request_message.parse_from_base(request)
+
+        try:
+            request_message.validate()
+        except ServerErrorException as e:
+            request_error = Request()
+            request_error.headers['Action'] = 'ERROR'
+            request_error.to_users.append(request.user)
+            request_error.headers['Error-Message'] = str(e)
+            return [request_error]
 
         data = request.data
         user = request.user
         message = data['message']
 
-        # message_request = MessageRequest.create_from_base(request)
-        # message = message_request.message
-
         requests = list()
-        # requests.append(self.get_current_word_request(request))
 
         result, points = self.game_logic.answer_result(message)
         if result:
@@ -182,17 +196,26 @@ class Game:
             self.start_round()
             requests.append(self.get_message_request(f'New round, {self.current_drawing} is drawing'))
             requests.extend(self.get_new_round_request())
-
-            # request.append(self.get_request_for_clearing_canvas())            
+         
         else:
             requests.append(self.get_message_request(f'{user}: {message}'))
 
         return requests
 
+
+
     def send_draw(self, request: Request):
+        draw_request: DrawRequest = DrawRequest()
+        draw_request.parse_from_base(request)
+        draw_request.parse_draw()
+        
+        error_request = self.find_exceptions(draw_request)
+        if error_request != None:
+            return [error_request]
+
         if self.current_drawing == request.user:
             r = Request()
-            r.headers['Action'] = 'DRAW'
+            r.headers['Action'] = 'UPDATE_DRAW'
             r.headers['Data'] = json.dumps(request.data)
             return [r]
         else:

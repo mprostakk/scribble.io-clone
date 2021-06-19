@@ -24,7 +24,7 @@ q = Queue()
 q_sender = Queue()
 
 HOST = 'localhost'
-PORT = 1783
+PORT = 1782
 
 class PaintWidget(StencilView):
     def __init__(self, **kwargs):
@@ -61,8 +61,22 @@ class Screen(Widget):
         super().__init__(**kwargs)
         event = Clock.schedule_interval(self.queue_callback, 1 / 300.)
         self.lines = dict()
-
         self.current_color = [1, 0, 0, 1]
+
+    
+    def custom_dispatch(self, request):
+        if request.action == 'UPDATE_CHAT':
+            self.update_chat(request)
+        elif request.action == 'UPDATE_POINTS':
+            self.update_points(request)
+        elif request.action == 'UPDATE_DRAW':
+            self.update_drawing(request)
+        elif request.action == 'CURRENT_WORD':
+            self.update_current_word(request)
+        elif request.action == 'NEW_ROUND':
+            self.update_new_round(request)
+        elif request.action == 'ERROR':
+            self.handle_error(request)
 
     def set_color(self, color):
         r, g, b = color.split(',')
@@ -81,6 +95,7 @@ class Screen(Widget):
         request = Request()
         request.headers['Action'] = 'SEND_MESSAGE'
         request.headers['Data'] = json_data
+        request.headers['Content-Length'] = len(data_object)
         q_sender.put(request)
 
         text_input.text = ''
@@ -91,20 +106,6 @@ class Screen(Widget):
             q.task_done()
             self.custom_dispatch(request)
 
-    def custom_dispatch(self, request):
-        if request.action == 'UPDATE_CHAT':
-            self.update_chat(request)
-        elif request.action == 'UPDATE_POINTS':
-            self.update_points(request)
-        elif request.action == 'DRAW':
-            self.update_drawing(request)
-        elif request.action == 'CURRENT_WORD':
-            self.update_current_word(request)
-        elif request.action == 'NEW_ROUND':
-            self.update_new_round(request)
-        # elif request.action == 'CLEAR_CANVAS':
-        #     self.clear_canvas()
-
     def update_chat(self, request):
         chat_grid = self.ids.chat_grid
         chat_grid.add_widget(
@@ -112,6 +113,10 @@ class Screen(Widget):
                 text=request.data['message']
             )
         )
+    
+    def handle_error(self, request):
+        print(request.headers.get('Error-Message'))
+        
 
     def update_new_round(self, request):
         # clear drawing
@@ -162,7 +167,7 @@ class Screen(Widget):
         word_id.text = word
 
 
-class TestApp(App):
+class SribbleioApp(App):
     def build(self):
         return Screen()
 
@@ -201,4 +206,4 @@ if __name__ == '__main__':
     sender_thread.daemon = True
     sender_thread.start()
 
-    TestApp().run()
+    SribbleioApp().run()
