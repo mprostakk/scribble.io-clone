@@ -24,7 +24,7 @@ q = Queue()
 q_sender = Queue()
 
 HOST = 'localhost'
-PORT = 1782
+PORT = 1784
 
 class PaintWidget(StencilView):
     def __init__(self, **kwargs):
@@ -189,14 +189,43 @@ if __name__ == '__main__':
     Window.size = (800, 600)
     Window.minimum_width, Window.minimum_height = Window.size
 
+    # TODO
 
-    context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile='certs/server.crt')
-    context.load_cert_chain('certs/client.crt', 'certs/client.key')
-    
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, PORT))
+    context = ssl.SSLContext()
+    context.verify_mode = ssl.CERT_REQUIRED
 
-    ssl_socket = context.wrap_socket(sock, server_hostname=HOST)
+    # Load CA certificate with which the client will validate the server certificate
+    # context.load_verify_locations("./DemoCA.pem");
+
+    # Load client certificate
+    context.load_cert_chain(certfile="./certs/client.crt", keyfile="./certs/client.key")
+
+    # Create a client socket
+    clientSocket = socket.socket()
+
+    ssl_socket  = context.wrap_socket(clientSocket)
+    ssl_socket.connect((HOST, PORT))
+
+    # Obtain the certificate from the server
+    server_cert = ssl_socket.getpeercert();
+
+    print(server_cert, flush=True)
+
+    if not server_cert:
+        raise Exception("Unable to retrieve server certificate")
+
+    subject = dict(item[0] for item in server_cert['subject'])
+    commonName = subject['commonName']
+    print(commonName, flush=True)
+
+    # subject = dict(item[0] for item in server_cert['subject']);
+    # commonName = subject['commonName'];
+
+    # context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile='certs/server.crt')
+  
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # sock.connect((HOST, PORT))
+    # ssl_socket = context.wrap_socket(sock, server_hostname=HOST)
     
     worker_thread = Thread(target=worker, args=(ssl_socket,))
     worker_thread.daemon = True

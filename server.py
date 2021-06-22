@@ -9,6 +9,9 @@ from utils import receive_request, CustomClients
 from custom_request import Request
 from game_logic import Game
 
+HOST = 'localhost'
+PORT = 1784
+NUMBER_OF_CLIENTS = 2
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -18,14 +21,11 @@ logging.basicConfig(
     ]
 )
 
-HOST = 'localhost'
-PORT = 1782
-NUMBER_OF_CLIENTS = 2
 
 class Server:
     def __init__(self) -> None:
         logging.info('Creating socket')
-        self.ssl_socket = self.create_ssl_socket()
+        # self.ssl_socket = self.create_ssl_socket()
         
         self.threads = list()
         self.clients = CustomClients()
@@ -33,16 +33,19 @@ class Server:
         self.queue_client: Queue = Queue()
         self.queue_sender: Queue = Queue()
 
-    def create_ssl_socket(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((HOST, PORT))
-        sock.listen(NUMBER_OF_CLIENTS)
+    # def create_socket(self):
+    #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     sock.bind((HOST, PORT))
+    #     sock.listen(NUMBER_OF_CLIENTS)
 
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile='certs/client.crt')
-        context.load_cert_chain(certfile='certs/server.crt', keyfile='certs/server.key')
-        ssl_socket = context.wrap_socket(sock, server_side=True)
+    #     client, addr = sock.accept()
 
-        return ssl_socket
+    #     ssl_socket = ssl.wrap_socket(client, ca_certs=None, server_side=True, certfile="certs/server.crt", keyfile="certs/server.key", cert_regs=ssl.CERT_REQUIRED)
+    #     client_cert = ssl_socket.getpeercert()
+        
+    #     # ssl_socket = context.wrap_socket(sock, server_side=True)
+
+    #     return ssl_socket
 
     def worker(self, client):
         while True:
@@ -92,10 +95,37 @@ class Server:
         self.run_worker(self.game_worker)
         self.run_worker(self.sender_worker)
 
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((HOST, PORT))
+        sock.listen(NUMBER_OF_CLIENTS)
+
         k = 1
         while True:
             logging.info('Socket accept')
-            client, addr = self.ssl_socket.accept()
+            
+            client, addr = sock.accept()
+            # ssl_socket = ssl.wrap_socket(client, ca_certs=None, server_side=True, certfile="certs/server.crt", keyfile="certs/server.key", cert_reqs=ssl.CERT_REQUIRED)
+            ssl_socket = ssl.wrap_socket(client, 
+                    # ca_certs='/etc/ssl/certs/ca-certificates.crt', 
+                                         server_side=True, certfile="./certs/server.crt", 
+                                         keyfile="certs/server.key")
+
+            client_cert = ssl_socket.getpeercert()
+            
+            if not client_cert:
+                raise Exception("Unable to get the certificate from the client")
+
+            # TODO - CHWILOWE 
+            client = ssl_socket
+
+            # ssl_sock = ssl.wrap_socket(s,
+            #    ca_certs="/etc/ssl/certs/ca-certificates.crt",
+            #    cert_reqs=ssl.CERT_REQUIRED)
+
+            # clt_subject    = dict(item[0] for item in client_cert['subject'])
+            # clt_commonName = clt_subject['commonName']
+            # if client. != 'localhost':
+            #     raise Exception("Incorrect common name in client certificate")
 
             username = f'Player {k}'
             self.clients.add_client(client, username)
